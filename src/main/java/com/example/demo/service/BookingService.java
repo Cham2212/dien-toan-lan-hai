@@ -59,27 +59,21 @@ public class BookingService {
     public void book(Booking b, String serverId) {
 
         tick();
-        logs.add(log("CLIENT", "Nhận request đặt phòng: " + b.getName()));
+        logs.add(log("CLIENT", "Nhận request: " + b.getName()));
 
-        // gán Lamport
         b.setLamportTime(clock);
 
         new Thread(() -> {
 
-            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(2000);
-            factory.setReadTimeout(2000);
-
-            RestTemplate restTemplate = new RestTemplate(factory);
+            RestTemplate restTemplate = createRestTemplate();
 
             List<String> okServers = new ArrayList<>();
 
             // ===== PHASE 1: PREPARE =====
             for (String url : otherServers) {
-
                 try {
                     tick();
-                    logs.add(log("2PC", "Gửi PREPARE tới " + url));
+                    logs.add(log("2PC", "Gửi PREPARE -> " + url));
 
                     Boolean res = restTemplate.postForObject(
                             url + "/api/prepare",
@@ -96,37 +90,32 @@ public class BookingService {
 
                 } catch (Exception e) {
                     serverStatus.put(url, false);
-                    logs.add(log("ERROR", "Server DOWN: " + url));
+                    logs.add(log("ERROR", "PREPARE FAIL: " + url));
                 }
             }
 
-            // ===== PHASE 2: COMMIT =====
+            // ===== PHASE 2 =====
             if (okServers.size() == otherServers.length) {
 
                 tick();
-                logs.add(log("2PC", "TẤT CẢ OK → COMMIT"));
+                logs.add(log("2PC", "ALL OK → COMMIT"));
 
                 // commit local
                 repository.save(b);
-
-                tick();
-                logs.add(log("DATABASE", "Đã COMMIT local"));
+                logs.add(log("DATABASE", "COMMIT LOCAL"));
 
                 for (String url : okServers) {
-                    try {
-                        restTemplate.postForObject(
-                                url + "/api/commit",
-                                b,
-                                String.class);
-                    } catch (Exception e) {
-                        logs.add(log("ERROR", "Commit fail: " + url));
-                    }
+                    commitWithRetry(restTemplate, url, b);
                 }
 
             } else {
 
                 tick();
                 logs.add(log("2PC", "ABORT do thiếu server"));
+
+                for (String url : okServers) {
+                    sendAbort(restTemplate, url, b);
+                }
             }
 
         }).start();
@@ -136,15 +125,13 @@ public class BookingService {
     public boolean prepare(Booking b) {
 
         updateClock(b.getLamportTime());
-
         logs.add(log("2PC", "Nhận PREPARE"));
 
-        // luôn OK (có thể check logic)
-        return true;
+        return true; // luôn OK
     }
 
     // ================== COMMIT ==================
-    public void commit(Booking b) {
+    public String commit(Booking b) {
 
         updateClock(b.getLamportTime());
 
@@ -153,7 +140,61 @@ public class BookingService {
         repository.save(b);
 
         tick();
-        logs.add(log("DATABASE", "Đã COMMIT vào DB"));
+        logs.add(log("DATABASE", "COMMIT DB"));
+
+        return "OK"; // QUAN TRỌNG
+    }
+
+    // ================== ABORT ==================
+    public String abort(Booking b) {
+
+        updateClock(b.getLamportTime());
+
+        logs.add(log("2PC", "Nhận ABORT"));
+
+        return "ABORTED";
+    }
+
+    // ================== RETRY COMMIT ==================
+    private void commitWithRetry(RestTemplate restTemplate, String url, Booking b) {
+
+        int retry = 0;
+
+        while (retry < 3) {
+            try {
+                String res = restTemplate.postForObject(
+                        url + "/api/commit",
+                        b,
+                        String.class);
+
+                logs.add(log("2PC", "COMMIT OK từ " + url));
+                return;
+
+            } catch (Exception e) {
+                retry++;
+                logs.add(log("ERROR", "Retry " + retry + " COMMIT fail: " + url));
+            }
+        }
+
+        logs.add(log("ERROR", "COMMIT FAIL hoàn toàn: " + url));
+    }
+
+    // ================== ABORT SEND ==================
+    private void sendAbort(RestTemplate restTemplate, String url, Booking b) {
+        try {
+            restTemplate.postForObject(url + "/api/abort", b, String.class);
+            logs.add(log("2PC", "Gửi ABORT -> " + url));
+        } catch (Exception e) {
+            logs.add(log("ERROR", "ABORT FAIL: " + url));
+        }
+    }
+
+    // ================== REST TEMPLATE ==================
+    private RestTemplate createRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);
+        factory.setReadTimeout(5000);
+        return new RestTemplate(factory);
     }
 
     // ================== LOG ==================
