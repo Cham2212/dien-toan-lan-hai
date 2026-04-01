@@ -19,7 +19,7 @@ public class BookingService {
 
     // Danh sách server khác
     private String[] otherServers = {
-            "https://hotel-booking-system-2-tzhh.onrender.com",
+            "https://hotel-booking-system-new.onrender.com",
             "https://dien-toan-lan-hai.onrender.com",
 
     };
