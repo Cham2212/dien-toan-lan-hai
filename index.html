@@ -1,130 +1,105 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<title>Server Log</title>
-
-<style>
-body {
-  font-family: Arial;
-  background: #0d1117;
-  color: #fff;
-  padding: 20px;
-}
-
-h1 { color: #00ff00; }
-
-button {
-  padding: 10px 20px;
-  margin: 10px 0;
-  border: none;
-  border-radius: 6px;
-  background: #00ff00;
-  color: #000;
-  cursor: pointer;
-}
-
-.group {
-  margin-top: 20px;
-  padding: 15px;
-  border-radius: 10px;
-}
-
-.req { background: #001f2f; }
-.ok  { background: #002f00; }
-.err { background: #2f0000; }
-
-.log {
-  font-family: monospace;
-  margin: 5px 0;
-}
-</style>
+  <meta charset="UTF-8">
+  <title>Hệ thống đặt vé</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      margin-top: 0;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    .log {
+      background: #000;
+      color: #0f0;
+      padding: 10px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+  </style>
 </head>
-
 <body>
 
-<h1>🖥 Server Log (Tất cả server)</h1>
+<div class="container">
 
-<button onclick="loadLog()">🔄 Tải log</button>
+  <div class="card">
+    <h2>Đặt vé</h2>
+    <input id="message" placeholder="Nhập nội dung..." />
+    <button onclick="book()">Gửi request</button>
+  </div>
 
-<div class="group req">
-  <h3>📥 Booking</h3>
-  <div id="request"></div>
-</div>
+  <div class="card">
+    <h2>Log hệ thống</h2>
+    <button onclick="loadLogs()">Load log</button>
+    <div id="logs" class="log"></div>
+  </div>
 
-<div class="group ok">
-  <h3>🔁 Replicate / 2PC</h3>
-  <div id="success"></div>
-</div>
-
-<div class="group err">
-  <h3>📋 Tất cả log</h3>
-  <div id="all"></div>
 </div>
 
 <script>
+  const BASE_URL = "http://localhost:8080/api";
 
-// 👉 DANH SÁCH SERVER
-const servers = [
-  "https://dien-toan-lan-hai.onrender.com",
-  "https://hotel-booking-system-new.onrender.com",
-  "https://dien-toan-lan-hai-488r.onrender.com"
-];
+  function book() {
+    const message = document.getElementById("message").value;
 
-function loadLog() {
+    fetch(BASE_URL + "/book", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ message: message })
+    })
+    .then(res => res.text())
+    .then(data => {
+      alert(data);
+      loadLogs();
+    })
+    .catch(err => alert("Lỗi: " + err));
+  }
 
-  let requestLogs = "";
-  let replicateLogs = "";
-  let allLogs = "";
-
-  Promise.all(
-    servers.map(url =>
-      fetch(url + "/api/log")
-        .then(res => res.json())
-        .then(data => {
-
-          if (data.length === 0) {
-            allLogs += <div class="log">⚠️ ${url} chưa có log</div>;
-          }
-
-          data.forEach(log => {
-
-            // 👉 thêm prefix server
-            const fullLog = `[${url}] ${log}`;
-
-            allLogs += <div class="log">${fullLog}</div>;
-
-            if (log.includes("booking")) {
-              requestLogs += <div class="log" style="color:#00bfff">${fullLog}</div>;
-            }
-            else if (
-              log.includes("PREPARE") ||
-              log.includes("COMMIT") ||
-              log.includes("2PC")
-            ) {
-              replicateLogs += <div class="log" style="color:#00ff00">${fullLog}</div>;
-            }
-
-          });
-
-        })
-        .catch(() => {
-          allLogs += <div class="log">❌ ${url} DOWN</div>;
-        })
-    )
-  ).then(() => {
-
-    document.getElementById("request").innerHTML = requestLogs;
-    document.getElementById("success").innerHTML = replicateLogs;
-    document.getElementById("all").innerHTML = allLogs;
-
-  });
-
-}
-
-// 👉 auto load
-window.onload = loadLog;
-
+  function loadLogs() {
+    fetch(BASE_URL + "/log")
+      .then(res => res.json())
+      .then(data => {
+        const logDiv = document.getElementById("logs");
+        logDiv.innerHTML = "";
+        data.forEach(log => {
+          logDiv.innerHTML += log + "<br/>";
+        });
+      });
+  }
 </script>
 
 </body>

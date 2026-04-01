@@ -12,9 +12,7 @@ body {
   padding: 20px;
 }
 
-h1 {
-  color: #00ff00;
-}
+h1 { color: #00ff00; }
 
 button {
   padding: 10px 20px;
@@ -41,12 +39,11 @@ button {
   margin: 5px 0;
 }
 </style>
-
 </head>
 
 <body>
 
-<h1>🖥 Server Log</h1>
+<h1>🖥 Server Log (Tất cả server)</h1>
 
 <button onclick="loadLog()">🔄 Tải log</button>
 
@@ -56,7 +53,7 @@ button {
 </div>
 
 <div class="group ok">
-  <h3>🔁 Replicate</h3>
+  <h3>🔁 Replicate / 2PC</h3>
   <div id="success"></div>
 </div>
 
@@ -66,47 +63,68 @@ button {
 </div>
 
 <script>
+
+// 👉 DANH SÁCH SERVER
+const servers = [
+  "https://dien-toan-lan-hai.onrender.com",
+  "https://hotel-booking-system-new.onrender.com",
+  "https://dien-toan-lan-hai-488r.onrender.com"
+];
+
 function loadLog() {
-  fetch("https://dien-toan-lan-hai.onrender.com/api/log")
-    .then(res => res.json())
-    .then(data => {
 
-      console.log("DATA:", data);
+  let requestLogs = "";
+  let replicateLogs = "";
+  let allLogs = "";
 
-      let requestLogs = "";
-      let replicateLogs = "";
-      let allLogs = "";
+  Promise.all(
+    servers.map(url =>
+      fetch(url + "/api/log")
+        .then(res => res.json())
+        .then(data => {
 
-      if (data.length === 0) {
-        allLogs = "<div class='log'>⚠️ Chưa có log nào</div>";
-      }
+          if (data.length === 0) {
+            allLogs += `<div class="log">⚠️ ${url} chưa có log</div>`;
+          }
 
-      data.forEach(log => {
+          data.forEach(log => {
 
-        allLogs += `<div class="log">${log}</div>`;
+            // 👉 thêm prefix server
+            const fullLog = `[${url}] ${log}`;
 
-        if (log.includes("nhận booking")) {
-          requestLogs += `<div class="log" style="color:#00bfff">${log}</div>`;
-        }
-        else if (log.includes("nhận từ server khác")) {
-          replicateLogs += `<div class="log" style="color:#00ff00">${log}</div>`;
-        }
+            allLogs += `<div class="log">${fullLog}</div>`;
 
-      });
+            if (log.includes("booking")) {
+              requestLogs += `<div class="log" style="color:#00bfff">${fullLog}</div>`;
+            }
+            else if (
+              log.includes("PREPARE") ||
+              log.includes("COMMIT") ||
+              log.includes("2PC")
+            ) {
+              replicateLogs += `<div class="log" style="color:#00ff00">${fullLog}</div>`;
+            }
 
-      document.getElementById("request").innerHTML = requestLogs;
-      document.getElementById("success").innerHTML = replicateLogs;
-      document.getElementById("all").innerHTML = allLogs;
+          });
 
-    })
-    .catch(err => {
-      alert("❌ Không load được log!");
-      console.error(err);
-    });
+        })
+        .catch(() => {
+          allLogs += `<div class="log">❌ ${url} DOWN</div>`;
+        })
+    )
+  ).then(() => {
+
+    document.getElementById("request").innerHTML = requestLogs;
+    document.getElementById("success").innerHTML = replicateLogs;
+    document.getElementById("all").innerHTML = allLogs;
+
+  });
+
 }
 
-// 👉 tự load khi mở trang
+// 👉 auto load
 window.onload = loadLog;
+
 </script>
 
 </body>
