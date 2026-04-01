@@ -67,8 +67,8 @@ public class BookingService {
         new Thread(() -> {
 
             SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-            factory.setConnectTimeout(2000);
-            factory.setReadTimeout(2000);
+            factory.setConnectTimeout(20000);
+            factory.setReadTimeout(20000);
 
             RestTemplate restTemplate = new RestTemplate(factory);
 

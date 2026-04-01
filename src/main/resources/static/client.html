@@ -1,68 +1,87 @@
 <!-- ================= CLIENT UI ================= -->
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-<meta charset="UTF-8">
-<title>Client</title>
-<style>
-body{font-family:Arial;background:#f4f6f9;padding:20px}
-.card{background:#fff;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
-input,select,button{width:100%;padding:10px;margin:8px 0;border-radius:6px;border:1px solid #ccc}
-button{background:#4CAF50;color:#fff;border:none}
-</style>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Client</title>
+    <style>
+      body {
+        font-family: Arial;
+        background: #f4f6f9;
+        padding: 20px;
+      }
+      .card {
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+      }
+      button {
+        background: #4caf50;
+        color: #fff;
+        border: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>Client</h2>
 
-<div class="card">
-<h2>Client</h2>
+      <select id="server">
+        <option value="8080">Server 1</option>
+        <option value="8082">Server 2</option>
+        <option value="8083">Server 3</option>
+        <option value="8084">Server 4</option>
+        <option value="8085">Server 5</option>
+      </select>
 
-<select id="server">
-<option value="8080">Server 1</option>
-<option value="8082">Server 2</option>
-<option value="8083">Server 3</option>
-<option value="8084">Server 4</option>
-<option value="8085">Server 5</option>
-</select>
+      <select id="room">
+        <option>Phòng A101</option>
+        <option>Phòng A102</option>
+        <option>Phòng B201</option>
+      </select>
 
-<select id="room">
-<option>Phòng A101</option>
-<option>Phòng A102</option>
-<option>Phòng B201</option>
-</select>
+      <input id="name" placeholder="Tên khách" />
+      <input type="date" id="checkin" />
+      <input type="date" id="checkout" />
 
-<input id="name" placeholder="Tên khách" />
-<input type="date" id="checkin" />
-<input type="date" id="checkout" />
+      <button onclick="book()">Đặt phòng</button>
+    </div>
 
-<button onclick="book()">Đặt phòng</button>
-</div>
+    <script>
+      function book() {
+        const data = {
+          name: document.getElementById("name").value,
+          room: document.getElementById("room").value,
+          checkin: document.getElementById("checkin").value,
+          checkout: document.getElementById("checkout").value,
+        };
 
-<script>
-function book() {
-  const data = {
-    name: document.getElementById("name").value,
-    room: document.getElementById("room").value,
-    checkin: document.getElementById("checkin").value,
-    checkout: document.getElementById("checkout").value
-  };
-
-  fetch("https://dien-toan-lan-hai-488r.onrender.com/api/book", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  })
-  .then(res => res.text())
-  .then(res => {
-    alert("Đặt phòng thành công!");
-  })
-  .catch(err => {
-    alert("Lỗi kết nối server!");
-  });
-}
-</script>
-</body>
+        fetch("https://dien-toan-lan-hai-488r.onrender.com/api/book", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((res) => res.text())
+          .then((res) => {
+            alert("Đặt phòng thành công!");
+          })
+          .catch((err) => {
+            alert("Lỗi kết nối server!");
+          });
+      }
+    </script>
+  </body>
 </html>
-
-
