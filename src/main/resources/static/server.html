@@ -36,10 +36,6 @@ button {
 .ok  { background: #002f00; }
 .err { background: #2f0000; }
 
-.group h3 {
-  margin-bottom: 10px;
-}
-
 .log {
   font-family: monospace;
   margin: 5px 0;
@@ -50,23 +46,23 @@ button {
 
 <body>
 
-<h1>🖥 Server Log (Server hiện tại)</h1>
+<h1>🖥 Server Log</h1>
 
-<button onclick="loadLog()">Xem log</button>
+<button onclick="loadLog()">🔄 Tải log</button>
 
 <div class="group req">
-  <h3>📥 Nhận request</h3>
+  <h3>📥 Booking</h3>
   <div id="request"></div>
 </div>
 
 <div class="group ok">
-  <h3>✅ Thành công</h3>
+  <h3>🔁 Replicate</h3>
   <div id="success"></div>
 </div>
 
 <div class="group err">
-  <h3>❌ Lỗi</h3>
-  <div id="error"></div>
+  <h3>📋 Tất cả log</h3>
+  <div id="all"></div>
 </div>
 
 <script>
@@ -75,34 +71,42 @@ function loadLog() {
     .then(res => res.json())
     .then(data => {
 
+      console.log("DATA:", data);
+
       let requestLogs = "";
-      let successLogs = "";
-      let errorLogs = "";
+      let replicateLogs = "";
+      let allLogs = "";
+
+      if (data.length === 0) {
+        allLogs = "<div class='log'>⚠️ Chưa có log nào</div>";
+      }
 
       data.forEach(log => {
 
-        if (log.includes("nhận request")) {
+        allLogs += `<div class="log">${log}</div>`;
+
+        if (log.includes("nhận booking")) {
           requestLogs += `<div class="log" style="color:#00bfff">${log}</div>`;
         }
-        else if (log.includes("thành công")) {
-          successLogs += `<div class="log" style="color:#00ff00">${log}</div>`;
-        }
-        else {
-          errorLogs += `<div class="log" style="color:#ff4d4d">${log}</div>`;
+        else if (log.includes("nhận từ server khác")) {
+          replicateLogs += `<div class="log" style="color:#00ff00">${log}</div>`;
         }
 
       });
 
       document.getElementById("request").innerHTML = requestLogs;
-      document.getElementById("success").innerHTML = successLogs;
-      document.getElementById("error").innerHTML = errorLogs;
+      document.getElementById("success").innerHTML = replicateLogs;
+      document.getElementById("all").innerHTML = allLogs;
 
     })
     .catch(err => {
-      alert("Không load được log!");
+      alert("❌ Không load được log!");
       console.error(err);
     });
 }
+
+// 👉 tự load khi mở trang
+window.onload = loadLog;
 </script>
 
 </body>
