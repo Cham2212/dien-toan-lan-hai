@@ -19,7 +19,7 @@ public class BookingController {
     @Value("${server.id}")
     private String serverId;
 
-    // ✅ API tạo booking (CHÍNH)
+    // ✅ BOOK (2PC)
     @PostMapping("/book")
     public String book(@RequestBody Booking b) {
         System.out.println("Nhận request /book: " + b.getName());
@@ -27,24 +27,28 @@ public class BookingController {
         return "Booking thành công!";
     }
 
-    // ✅ API nhận replicate từ server khác
-    @PostMapping("/replicate")
-    public String replicate(@RequestBody Booking b) {
-        System.out.println("Nhận replicate: " + b.getName());
-        service.replicate(b, serverId);
-        return "Replicated OK";
+    // ✅ PREPARE (Phase 1)
+    @PostMapping("/prepare")
+    public boolean prepare(@RequestBody Booking b) {
+        return service.prepare(b);
     }
 
-    // ✅ API lấy log
+    // ✅ COMMIT (Phase 2)
+    @PostMapping("/commit")
+    public String commit(@RequestBody Booking b) {
+        service.commit(b);
+        return "COMMIT OK";
+    }
+
+    // ✅ LOG
     @GetMapping("/log")
     public List<String> logs() {
-        System.out.println("API /log được gọi");
         return service.getLogs();
     }
 
-    @PostMapping("/replicate-log")
-    public String replicateLog(@RequestBody String log) {
-        service.addLog(log);
-        return "OK";
+    // ✅ STATUS
+    @GetMapping("/status")
+    public Object status() {
+        return service.getServerStatus();
     }
 }

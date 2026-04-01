@@ -15,6 +15,7 @@ public class Booking {
     private String checkin;
     private String checkout;
     private boolean replicated;
+    private int lamportTime;
 
     // ===== Constructor =====
     public Booking() {
@@ -71,5 +72,13 @@ public class Booking {
 
     public void setReplicated(boolean replicated) {
         this.replicated = replicated;
+    }
+
+    public int getLamportTime() {
+        return lamportTime;
+    }
+
+    public void setLamportTime(int lamportTime) {
+        this.lamportTime = lamportTime;
     }
 }
